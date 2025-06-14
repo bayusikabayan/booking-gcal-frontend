@@ -1,0 +1,772 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Booking - Manajemen Tamu</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 20px;
+            background-color: #f4f7f6;
+            color: #333;
+            line-height: 1.6;
+        }
+        .container {
+            max-width: 900px;
+            margin: 30px auto;
+            background-color: #ffffff;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+        h1, h2 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 25px;
+        }
+        form {
+            display: grid;
+            gap: 15px;
+            margin-top: 20px;
+            margin-bottom: 30px;
+        }
+        label {
+            font-weight: bold;
+            color: #555;
+            margin-bottom: 5px;
+            display: block;
+        }
+        input[type="date"],
+        input[type="text"],
+        input[type="file"],
+        button {
+            width: calc(100% - 22px);
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 1em;
+        }
+        input[type="file"] {
+            padding: 7px;
+        }
+        button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            margin-top: 10px;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        .message {
+            margin-top: 15px;
+            padding: 10px;
+            border-radius: 5px;
+            text-align: center;
+        }
+        .message.success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .message.error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        /* --- Gaya Kalender --- */
+        .calendar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding: 10px 0;
+            border-bottom: 1px solid #eee;
+        }
+        .calendar-header button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: background-color 0.3s ease;
+        }
+        .calendar-header button:hover {
+            background-color: #2980b9;
+        }
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 10px;
+            text-align: center;
+        }
+        .calendar-day-name {
+            font-weight: bold;
+            color: #555;
+            padding: 10px;
+            background-color: #ecf0f1;
+            border-radius: 5px;
+        }
+        .calendar-date {
+            padding: 15px 10px;
+            background-color: #ecf0f1;
+            border-radius: 5px;
+            cursor: default;
+            transition: background-color 0.2s ease;
+            position: relative;
+            min-height: 50px; 
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: #333;
+            flex-direction: column;
+            font-size: 0.9em;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .calendar-date.disabled {
+            background-color: #f0f0f0;
+            color: #bbb;
+            cursor: not-allowed;
+        }
+        .calendar-date.booked {
+            background-color: #e74c3c; 
+            color: white;
+            cursor: default;
+        }
+        .calendar-date.today {
+            border: 2px solid #3498db;
+            color: #3498db;
+            background-color: #eaf5fb;
+        }
+        .guest-info {
+            font-size: 0.75em;
+            color: rgba(255, 255, 255, 0.8);
+            margin-top: 5px;
+            white-space: normal;
+            word-break: break-word;
+            text-align: center;
+        }
+        /* --- Akhir Gaya Kalender --- */
+
+        /* Tabel Daftar Booking */
+        #booking-list {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 30px;
+        }
+        #booking-list th, #booking-list td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: left;
+            vertical-align: top;
+        }
+        #booking-list th {
+            background-color: #f2f2f2;
+            font-weight: bold;
+            color: #333;
+        }
+        #booking-list tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        
+        /* Gaya Tombol Aksi */
+        .action-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+        }
+        .action-buttons button {
+            width: auto;
+            padding: 5px 10px;
+            font-size: 0.85em;
+            margin: 0;
+        }
+        .delete-btn { background-color: #e74c3c; }
+        .checkin-btn { background-color: #2ecc71; }
+        .view-ktp-btn { background-color: #3498db; }
+        .delete-btn:hover { background-color: #c0392b; }
+        .checkin-btn:hover { background-color: #27ae60; }
+        .view-ktp-btn:hover { background-color: #2980b9; }
+
+        .status-checked-in {
+            font-weight: bold;
+            color: #2ecc71;
+        }
+        .status-pending {
+            font-weight: bold;
+            color: #e67e22;
+        }
+
+        /* Gaya Modal untuk KTP Viewer */
+        #ktp-viewer-modal {
+            display: none;
+            position: fixed;
+            z-index: 1001;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.8);
+            justify-content: center;
+            align-items: center;
+        }
+        .ktp-modal-content {
+            background-color: #fefefe;
+            padding: 20px;
+            border-radius: 10px;
+            width: 90%;
+            max-width: 700px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            position: relative;
+            text-align: center;
+        }
+        .ktp-modal-content img {
+            max-width: 100%;
+            height: auto;
+            display: block;
+            margin: 0 auto;
+        }
+        .ktp-modal-close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            position: absolute;
+            top: 10px;
+            right: 20px;
+            cursor: pointer;
+        }
+        .ktp-modal-close:hover,
+        .ktp-modal-close:focus {
+            color: black;
+            text-decoration: none;
+            text-decoration: none;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Halaman Admin Booking</h1>
+        <p>Gunakan halaman ini untuk mengelola tanggal yang sudah terisi dan detail booking.</p>
+
+        <h2 style="margin-top: 30px;">Kalender Booking</h2>
+        <div class="calendar">
+            <div class="calendar-header">
+                <button id="prev-month">&lt; Bulan Sebelumnya</button>
+                <h3 id="current-month-year"></h3>
+                <button id="next-month">Bulan Selanjutnya &gt;</button>
+            </div>
+            <div class="calendar-grid">
+                <div class="calendar-day-name">Min</div>
+                <div class="calendar-day-name">Sen</div>
+                <div class="calendar-day-name">Sel</div>
+                <div class="calendar-day-name">Rab</div>
+                <div class="calendar-day-name">Kam</div>
+                <div class="calendar-day-name">Jum</div>
+                <div class="calendar-day-name">Sab</div>
+            </div>
+        </div>
+
+        <hr style="margin: 40px 0; border: 0; border-top: 1px solid #eee;">
+
+        <h2>Input Booking Terisi</h2>
+        <form id="admin-booking-form">
+            <div>
+                <label for="check-in-date">Tanggal Check-in:</label>
+                <input type="date" id="check-in-date" name="check_in_date" required>
+            </div>
+            <div>
+                <label for="check-out-date">Tanggal Check-out:</label>
+                <input type="date" id="check-out-date" name="check_out_date" required>
+            </div>
+            <div>
+                <label for="guest-name">Nama Tamu:</label>
+                <input type="text" id="guest-name" name="guest_name" placeholder="Contoh: Budi Santoso" required>
+            </div>
+            <div>
+                <label for="ktp-photo">Upload Foto KTP (Opsional):</label>
+                <input type="file" id="ktp-photo" name="ktp_photo" accept="image/*">
+                <small style="color: #666;">Ukuran file maksimal 1MB.</small>
+            </div>
+            <button type="submit">Tambahkan Booking</button>
+            <div id="form-message" class="message" style="display: none;"></div>
+        </form>
+
+        <hr style="margin: 40px 0; border: 0; border-top: 1px solid #eee;">
+
+        <h2>Daftar Booking Terisi (Tabel)</h2>
+        <table id="booking-list">
+            <thead>
+                <tr>
+                    <th>Check-in</th>
+                    <th>Check-out</th>
+                    <th>Nama Tamu</th>
+                    <th>Status</th>
+                    <th>Aksi</th>
+                </tr>
+            </thead>
+            <tbody>
+                </tbody>
+        </table>
+        <button id="clear-all-bookings" style="background-color: #e74c3c; margin-top: 20px;">Hapus Semua Booking</button>
+    </div>
+
+    <div id="ktp-viewer-modal">
+        <div class="ktp-modal-content">
+            <span class="ktp-modal-close">&times;</span>
+            <h3>Foto KTP Tamu</h3>
+            <img id="ktp-image-display" src="" alt="Foto KTP">
+            <p id="ktp-error-message" style="color: red;"></p>
+        </div>
+    </div>
+
+    <script>
+        const adminBookingForm = document.getElementById('admin-booking-form');
+        const checkInDateInput = document.getElementById('check-in-date');
+        const checkOutDateInput = document.getElementById('check-out-date');
+        const guestNameInput = document.getElementById('guest-name');
+        const ktpPhotoInput = document.getElementById('ktp-photo');
+        const formMessage = document.getElementById('form-message');
+        const bookingListBody = document.querySelector('#booking-list tbody');
+        const clearAllBookingsBtn = document.getElementById('clear-all-bookings');
+
+        const calendarGrid = document.querySelector('.calendar-grid');
+        const currentMonthYearEl = document.getElementById('current-month-year');
+        const prevMonthBtn = document.getElementById('prev-month');
+        const nextMonthBtn = document.getElementById('next-month');
+
+        const ktpViewerModal = document.getElementById('ktp-viewer-modal');
+        const ktpImageDisplay = document.getElementById('ktp-image-display');
+        const ktpErrorMessage = document.getElementById('ktp-error-message');
+        const ktpModalCloseBtn = document.querySelector('.ktp-modal-close');
+
+        let currentDate = new Date();
+        let currentMonth = currentDate.getMonth();
+        let currentYear = currentDate.getFullYear();
+
+        // URL API Anda (GANTI INI NANTI SAAT DEPLOY!)
+        const API_BASE_URL = 'http://localhost:3000/api/bookings';
+
+        function showMessage(msg, type) {
+            formMessage.textContent = msg;
+            formMessage.className = `message ${type}`;
+            formMessage.style.display = 'block';
+            setTimeout(() => {
+                formMessage.style.display = 'none';
+            }, 3000);
+        }
+
+        // Fungsi untuk mengambil data booking dari API
+        async function getAdminBookings() {
+            try {
+                const response = await fetch(API_BASE_URL);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const data = await response.json();
+                return data;
+            } catch (error) {
+                console.error('Error fetching bookings:', error);
+                showMessage('Gagal memuat data booking dari server.', 'error');
+                return [];
+            }
+        }
+
+        // Fungsi untuk menambahkan booking baru ke API
+        async function addBookingToAPI(bookingData) {
+            try {
+                const response = await fetch(API_BASE_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(bookingData)
+                });
+                const data = await response.json();
+                if (!response.ok) {
+                    throw new Error(data.message || `HTTP error! status: ${response.status}`);
+                }
+                return data;
+            } catch (error) {
+                console.error('Error adding booking:', error);
+                showMessage(`Gagal menambahkan booking: ${error.message}`, 'error');
+                throw error;
+            }
+        }
+
+        // Fungsi untuk mengupdate booking (status check-in/ktp) ke API
+        async function updateBookingInAPI(id, updateData) {
+            try {
+                const response = await fetch(`${API_BASE_URL}/${id}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(updateData)
+                });
+                const data = await response.json();
+                if (!response.ok) {
+                    throw new Error(data.message || `HTTP error! status: ${response.status}`);
+                }
+                return data;
+            } catch (error) {
+                console.error('Error updating booking:', error);
+                showMessage(`Gagal mengupdate booking: ${error.message}`, 'error');
+                throw error;
+            }
+        }
+
+
+        // Fungsi untuk menghapus booking dari API
+        async function deleteBookingFromAPI(id) {
+            try {
+                const response = await fetch(`${API_BASE_URL}/${id}`, {
+                    method: 'DELETE'
+                });
+                const data = await response.json();
+                if (!response.ok) {
+                    throw new Error(data.message || `HTTP error! status: ${response.status}`);
+                }
+                return data;
+            } catch (error) {
+                console.error('Error deleting booking:', error);
+                showMessage(`Gagal menghapus booking: ${error.message}`, 'error');
+                throw error;
+            }
+        }
+
+        async function renderBookingList() {
+            bookingListBody.innerHTML = '';
+            const bookings = await getAdminBookings();
+
+            if (bookings.length === 0) {
+                bookingListBody.innerHTML = '<tr><td colspan="5" style="text-align: center;">Belum ada booking.</td></tr>';
+                return;
+            }
+
+            bookings.sort((a, b) => new Date(a.checkIn) - new Date(b.checkIn)); 
+
+            bookings.forEach((booking) => { // Tidak perlu index lagi jika menggunakan _id
+                const row = bookingListBody.insertRow();
+                row.insertCell(0).textContent = booking.checkIn;
+                row.insertCell(1).textContent = booking.checkOut;
+                row.insertCell(2).textContent = booking.name;
+
+                const statusCell = row.insertCell(3);
+                if (booking.checkedInStatus) {
+                    statusCell.textContent = `Checked-in (${booking.checkedInStatus})`;
+                    statusCell.classList.add('status-checked-in');
+                } else {
+                    statusCell.textContent = 'Pending';
+                    statusCell.classList.add('status-pending');
+                }
+
+                const actionCell = row.insertCell(4);
+                actionCell.classList.add('action-buttons');
+
+                if (booking.ktpPhoto) {
+                    const viewKtpBtn = document.createElement('button');
+                    viewKtpBtn.textContent = 'Lihat KTP';
+                    viewKtpBtn.classList.add('view-ktp-btn');
+                    viewKtpBtn.dataset.id = booking._id; // Menggunakan _id dari MongoDB
+                    viewKtpBtn.addEventListener('click', handleViewKtp);
+                    actionCell.appendChild(viewKtpBtn);
+                }
+
+                if (!booking.checkedInStatus) {
+                    const checkInBtn = document.createElement('button');
+                    checkInBtn.textContent = 'Check-in';
+                    checkInBtn.classList.add('checkin-btn');
+                    checkInBtn.dataset.id = booking._id; // Menggunakan _id dari MongoDB
+                    checkInBtn.addEventListener('click', handleCheckIn);
+                    actionCell.appendChild(checkInBtn);
+                }
+
+                const deleteBtn = document.createElement('button');
+                deleteBtn.textContent = 'Hapus';
+                deleteBtn.classList.add('delete-btn');
+                deleteBtn.dataset.id = booking._id; // Menggunakan _id dari MongoDB
+                deleteBtn.addEventListener('click', handleDeleteBooking);
+                actionCell.appendChild(deleteBtn);
+            });
+        }
+
+        async function handleDeleteBooking(event) {
+            const idToDelete = event.target.dataset.id;
+            if (confirm('Anda yakin ingin menghapus booking ini?')) {
+                try {
+                    await deleteBookingFromAPI(idToDelete);
+                    showMessage('Booking berhasil dihapus!', 'success');
+                    renderBookingList();
+                    renderCalendar();
+                } catch (error) {
+                    // Pesan error sudah ditangani di deleteBookingFromAPI
+                }
+            }
+        }
+
+        async function handleCheckIn(event) {
+            const idToUpdate = event.target.dataset.id;
+            if (confirm('Anda yakin tamu ini sudah check-in?')) {
+                try {
+                    const checkInTime = new Date().toLocaleString('id-ID', {
+                        day: '2-digit', month: '2-digit', year: 'numeric',
+                        hour: '2-digit', minute: '2-digit'
+                    });
+                    await updateBookingInAPI(idToUpdate, { checkedInStatus: checkInTime });
+                    showMessage('Status tamu berhasil diupdate menjadi Checked-in!', 'success');
+                    renderBookingList();
+                } catch (error) {
+                    // Pesan error sudah ditangani di updateBookingInAPI
+                }
+            }
+        }
+
+        async function handleViewKtp(event) {
+            const idToView = event.target.dataset.id;
+            try {
+                const bookings = await getAdminBookings();
+                const booking = bookings.find(b => b._id === idToView);
+
+                if (booking && booking.ktpPhoto) {
+                    ktpImageDisplay.src = booking.ktpPhoto;
+                    ktpErrorMessage.textContent = '';
+                    ktpViewerModal.style.display = 'flex';
+                } else {
+                    ktpErrorMessage.textContent = 'Foto KTP tidak tersedia.';
+                    ktpImageDisplay.src = '';
+                    ktpViewerModal.style.display = 'flex';
+                }
+            } catch (error) {
+                console.error('Error fetching booking for KTP view:', error);
+                ktpErrorMessage.textContent = 'Gagal memuat foto KTP.';
+                ktpImageDisplay.src = '';
+                ktpViewerModal.style.display = 'flex';
+            }
+        }
+
+        adminBookingForm.addEventListener('submit', async (event) => {
+            event.preventDefault();
+
+            const checkIn = checkInDateInput.value;
+            const checkOut = checkOutDateInput.value;
+            const name = guestNameInput.value.trim();
+            const ktpPhotoFile = ktpPhotoInput.files[0];
+
+            if (!checkIn || !checkOut || !name) {
+                showMessage('Semua kolom (kecuali Foto KTP) harus diisi!', 'error');
+                return;
+            }
+
+            if (new Date(checkOut) <= new Date(checkIn)) {
+                showMessage('Tanggal Check-out harus setelah Tanggal Check-in!', 'error');
+                return;
+            }
+
+            const bookings = await getAdminBookings();
+            const newCheckInDate = new Date(checkIn);
+            const newCheckOutDate = new Date(checkOut);
+
+            const isOverlap = bookings.some(existingBooking => {
+                const existingCheckIn = new Date(existingBooking.checkIn);
+                const existingCheckOut = new Date(existingBooking.checkOut);
+                return (newCheckIn < existingCheckOut && newCheckOut > existingCheckIn);
+            });
+
+            if (isOverlap) {
+                showMessage('Rentang tanggal booking ini tumpang tindih dengan booking yang sudah ada!', 'error');
+                return;
+            }
+
+            let ktpPhotoBase64 = null;
+            if (ktpPhotoFile) {
+                if (ktpPhotoFile.size > 1024 * 1024) {
+                    showMessage('Ukuran foto KTP maksimal 1MB!', 'error');
+                    return;
+                }
+                const reader = new FileReader();
+                reader.onload = async function(e) { // <--- Menjadi async
+                    ktpPhotoBase64 = e.target.result;
+                    await processNewBooking(checkIn, checkOut, name, ktpPhotoBase64); // <--- Menunggu
+                };
+                reader.onerror = function() {
+                    showMessage('Gagal membaca file foto KTP!', 'error');
+                };
+                reader.readAsDataURL(ktpPhotoFile);
+            } else {
+                await processNewBooking(checkIn, checkOut, name, ktpPhotoBase64); // <--- Menunggu
+            }
+        });
+
+        async function processNewBooking(checkIn, checkOut, name, ktpPhotoBase64) { // <--- Menjadi async
+            try {
+                const newBookingData = { 
+                    checkIn, 
+                    checkOut, 
+                    name,
+                    ktpPhoto: ktpPhotoBase64,
+                    checkedInStatus: null 
+                };
+                await addBookingToAPI(newBookingData); // <--- Kirim ke API
+
+                adminBookingForm.reset();
+                showMessage('Booking berhasil ditambahkan!', 'success');
+                renderBookingList();
+                renderCalendar();
+            } catch (error) {
+                // Pesan error sudah ditangani di addBookingToAPI
+            }
+        }
+
+        clearAllBookingsBtn.addEventListener('click', async () => {
+            if (confirm('Anda yakin ingin menghapus SEMUA data booking? Tindakan ini tidak dapat dibatalkan.')) {
+                try {
+                    const bookings = await getAdminBookings();
+                    // Untuk kesederhanaan, kita loop dan hapus satu per satu.
+                    // Idealnya di backend ada endpoint khusus untuk hapus semua.
+                    for (const booking of bookings) {
+                        await deleteBookingFromAPI(booking._id);
+                    }
+                    showMessage('Semua booking berhasil dihapus!', 'success');
+                    renderBookingList();
+                    renderCalendar();
+                } catch (error) {
+                    console.error('Error clearing all bookings:', error);
+                    showMessage(`Gagal menghapus semua booking: ${error.message}`, 'error');
+                }
+            }
+        });
+
+        async function getAllBookedDatesWithGuestInfo() {
+            const bookings = await getAdminBookings();
+            const bookedDateMap = new Map();
+
+            bookings.forEach(booking => {
+                const checkIn = new Date(booking.checkIn);
+                const checkOut = new Date(booking.checkOut);
+
+                for (let d = new Date(checkIn); d < checkOut; d.setDate(d.getDate() + 1)) {
+                    const formattedDate = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+                    
+                    if (!bookedDateMap.has(formattedDate)) {
+                        bookedDateMap.set(formattedDate, []);
+                    }
+                    bookedDateMap.get(formattedDate).push(booking.name);
+                }
+            });
+            return bookedDateMap;
+        }
+
+        async function renderCalendar() {
+            while (calendarGrid.children.length > 7) { 
+                calendarGrid.removeChild(calendarGrid.lastChild);
+            }
+            
+            const monthNames = [
+                'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+                'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+            ];
+            currentMonthYearEl.textContent = `${monthNames[currentMonth]} ${currentYear}`;
+
+            const firstDayOfMonth = new Date(currentYear, currentMonth, 1);
+            const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+            const firstDayOfWeek = firstDayOfMonth.getDay(); 
+
+            const today = new Date();
+            today.setHours(0,0,0,0); 
+
+            const bookedDateMap = await getAllBookedDatesWithGuestInfo();
+
+            for (let i = 0; i < firstDayOfWeek; i++) {
+                const emptyDiv = document.createElement('div');
+                emptyDiv.classList.add('calendar-date', 'disabled'); 
+                calendarGrid.appendChild(emptyDiv);
+            }
+
+            for (let day = 1; day <= daysInMonth; day++) {
+                const dateEl = document.createElement('div');
+                dateEl.classList.add('calendar-date');
+                
+                const dayNumberSpan = document.createElement('span');
+                dayNumberSpan.textContent = day;
+                dateEl.appendChild(dayNumberSpan);
+
+                const fullDateObj = new Date(currentYear, currentMonth, day);
+                const fullDate = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                dateEl.dataset.fullDate = fullDate; 
+
+                if (bookedDateMap.has(fullDate)) { 
+                    dateEl.classList.add('booked');
+                    const guestNames = bookedDateMap.get(fullDate).join(', '); 
+                    const guestInfoDiv = document.createElement('div');
+                    guestInfoDiv.classList.add('guest-info');
+                    guestInfoDiv.textContent = guestNames;
+                    dateEl.appendChild(guestInfoDiv);
+                    dateEl.title = `Terisi oleh: ${guestNames}`; 
+                } 
+                
+                if (fullDateObj.toDateString() === today.toDateString()) {
+                    dateEl.classList.add('today');
+                }
+
+                if (fullDateObj < today) {
+                    dateEl.classList.add('disabled');
+                    dateEl.title = 'Tanggal sudah lewat';
+                    dateEl.style.cursor = 'not-allowed';
+                }
+
+                calendarGrid.appendChild(dateEl);
+            }
+        }
+
+        prevMonthBtn.addEventListener('click', () => {
+            currentMonth--;
+            if (currentMonth < 0) {
+                currentMonth = 11;
+                currentYear--;
+            }
+            renderCalendar();
+        });
+
+        nextMonthBtn.addEventListener('click', () => {
+            currentMonth++;
+            if (currentMonth > 11) {
+                currentMonth = 0;
+                currentYear++;
+            }
+            renderCalendar();
+        });
+
+        ktpModalCloseBtn.addEventListener('click', () => {
+            ktpViewerModal.style.display = 'none';
+            ktpImageDisplay.src = '';
+            ktpErrorMessage.textContent = '';
+        });
+
+        window.addEventListener('click', (event) => {
+            if (event.target === ktpViewerModal) {
+                ktpViewerModal.style.display = 'none';
+                ktpImageDisplay.src = '';
+                ktpErrorMessage.textContent = '';
+            }
+        });
+
+
+        document.addEventListener('DOMContentLoaded', () => {
+            renderCalendar();
+            renderBookingList();
+        });
+    </script>
+</body>
+</html>
